@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competency Bingo</title>
+<style>
+  :root {
+    --ink: #1c1c1a;
+    --ink-soft: #5f5e5a;
+    --paper: #faf8f3;
+    --card: #ffffff;
+    --line: #d9d5c8;
+    --accent: #185fa5;
+    --accent-bg: #e6f1fb;
+    --circle: #3b6d11;
+    --circle-bg: #eaf3de;
+    --cross: #a32d2d;
+    --cross-bg: #fcebeb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  header .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 4px;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .join-box {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .join-box p { color: var(--ink-soft); font-size: 14px; margin: 0 0 14px; }
+  .join-row { display: flex; gap: 8px; }
+  input[type="text"], input[type="number"] {
+    flex: 1;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 16px;
+    background: #fff;
+    color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary {
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 8px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  button.primary:active { transform: scale(0.98); }
+  button.ghost {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 18px 0 14px;
+  }
+  .status-row .group-label { font-size: 14px; font-weight: 600; }
+  .status-row .group-label span { color: var(--accent); }
+  .status-row .saved { font-size: 12px; color: var(--ink-soft); }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    justify-content: center;
+  }
+  .legend .dot { display: inline-flex; align-items: center; gap: 4px; }
+  .legend .mark { width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 11px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .cell {
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    line-height: 1.3;
+  }
+  .cell.circled {
+    background: var(--circle-bg);
+    color: var(--circle);
+    box-shadow: inset 0 0 0 3px var(--circle);
+    border-radius: 50%;
+  }
+  .cell.crossed {
+    background: var(--cross-bg);
+    color: var(--cross);
+  }
+  .cell.crossed::before, .cell.crossed::after {
+    content: "";
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 50%;
+    height: 2px;
+    background: var(--cross);
+  }
+  .cell.crossed::before { transform: rotate(45deg); }
+  .cell.crossed::after { transform: rotate(-45deg); }
+
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 14px;
+  }
+
+  .fac-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .fac-controls button.primary { flex: 1; }
+
+  table.fac-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  table.fac-table th, table.fac-table td {
+    border: 1px solid var(--line);
+    padding: 8px 6px;
+    text-align: center;
+  }
+  table.fac-table th {
+    background: #f1efe8;
+    font-weight: 600;
+    font-size: 11px;
+  }
+  table.fac-table th.comp-col {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    max-width: 28px;
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+  table.fac-table td.group-cell {
+    font-weight: 600;
+    background: #f8f7f2;
+    white-space: nowrap;
+  }
+  .fac-empty {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+    padding: 30px 10px;
+  }
+  .fac-mark { font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">College induction</p>
+    <h1>Competency bingo</h1>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="student">Group card</button>
+    <button class="tab" data-tab="facilitator">Facilitator</button>
+  </div>
+
+  <div class="panel active" id="panel-student">
+
+    <div class="join-box" id="joinBox">
+      <p>Enter your group number to open your team's card</p>
+      <div class="join-row">
+        <input type="number" id="groupInput" placeholder="Group number" min="1" inputmode="numeric">
+        <button class="primary" id="joinBtn">Open</button>
+      </div>
+    </div>
+
+    <div id="cardArea" style="display:none;">
+      <div class="status-row">
+        <div class="group-label">Group <span id="groupNumDisplay"></span></div>
+        <button class="ghost" id="switchGroupBtn">Switch group</button>
+      </div>
+
+      <div class="legend">
+        <span class="dot"><span class="mark" style="box-shadow: inset 0 0 0 2px var(--circle); border-radius: 50%;"></span> Spotted it</span>
+        <span class="dot"><span class="mark" style="color: var(--cross); background: var(--cross-bg);">&times;</span> Not this time</span>
+      </div>
+
+      <div class="grid" id="grid"></div>
+
+      <p class="hint">Tap once to circle, tap again to cross out, tap again to clear.</p>
+      <p class="hint" id="saveStatus"></p>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-facilitator">
+    <div class="fac-controls">
+      <button class="primary" id="loadAllBtn">Load all groups</button>
+    </div>
+    <div id="facTableWrap">
+      <p class="fac-empty">Tap "Load all groups" to pull in the latest marks from every group.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COMPETENCIES = [
+  "Adaptability",
+  "Resilience",
+  "Problem-solving",
+  "Planning & anticipation",
+  "Teamwork / collaboration",
+  "Communication",
+  "Resourcefulness",
+  "Decision-making",
+  "Leadership"
+];
+
+const STORAGE_PREFIX = "bingo-group-";
+
+let currentGroup = null;
+let currentMarks = new Array(COMPETENCIES.length).fill(0);
+
+// ---------- Tabs ----------
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+  });
+});
+
+// ---------- Student view ----------
+function renderGrid() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  COMPETENCIES.forEach((comp, i) => {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    if (currentMarks[i] === 1) cell.classList.add("circled");
+    if (currentMarks[i] === 2) cell.classList.add("crossed");
+    cell.textContent = comp;
+    cell.addEventListener("click", () => {
+      currentMarks[i] = (currentMarks[i] + 1) % 3;
+      renderGrid();
+      saveGroup();
+    });
+    grid.appendChild(cell);
+  });
+}
+
+async function saveGroup() {
+  const statusEl = document.getElementById("saveStatus");
+  try {
+    statusEl.textContent = "Saving...";
+    await window.storage.set(
+      STORAGE_PREFIX + currentGroup,
+      JSON.stringify({ competencies: COMPETENCIES, marks: currentMarks, updated: Date.now() }),
+      true
+    );
+    statusEl.textContent = "Saved";
+    setTimeout(() => { if (statusEl.textContent === "Saved") statusEl.textContent = ""; }, 1500);
+  } catch (e) {
+    statusEl.textContent = "Could not save, will retry on next tap.";
+  }
+}
+
+async function loadGroup(groupNum) {
+  currentGroup = groupNum;
+  currentMarks = new Array(COMPETENCIES.length).fill(0);
+  try {
+    const result = await window.storage.get(STORAGE_PREFIX + groupNum, true);
+    if (result && result.value) {
+      const data = JSON.parse(result.value);
+      if (Array.isArray(data.marks) && data.marks.length === COMPETENCIES.length) {
+        currentMarks = data.marks;
+      }
+    }
+  } catch (e) {
+    // no existing data for this group yet, start fresh
+  }
+  document.getElementById("groupNumDisplay").textContent = groupNum;
+  document.getElementById("joinBox").style.display = "none";
+  document.getElementById("cardArea").style.display = "block";
+  renderGrid();
+}
+
+document.getElementById("joinBtn").addEventListener("click", () => {
+  const val = document.getElementById("groupInput").value.trim();
+  if (!val) return;
+  loadGroup(val);
+});
+document.getElementById("groupInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("joinBtn").click();
+});
+document.getElementById("switchGroupBtn").addEventListener("click", () => {
+  document.getElementById("cardArea").style.display = "none";
+  document.getElementById("joinBox").style.display = "block";
+  document.getElementById("groupInput").value = "";
+});
+
+// ---------- Facilitator view ----------
+async function loadAllGroups() {
+  const wrap = document.getElementById("facTableWrap");
+  wrap.innerHTML = '<p class="fac-empty">Loading...</p>';
+  try {
+    const listResult = await window.storage.list(STORAGE_PREFIX, true);
+    const keys = (listResult && listResult.keys) ? listResult.keys : [];
+    if (keys.length === 0) {
+      wrap.innerHTML = '<p class="fac-empty">No groups have marked their card yet.</p>';
+      return;
+    }
+    const groups = [];
+    for (const key of keys) {
+      try {
+        const res = await window.storage.get(key, true);
+        if (res && res.value) {
+          const data = JSON.parse(res.value);
+          const groupNum = key.replace(STORAGE_PREFIX, "");
+          groups.push({ groupNum, marks: data.marks || [] });
+        }
+      } catch (e) {}
+    }
+    groups.sort((a, b) => {
+      const na = parseFloat(a.groupNum), nb = parseFloat(b.groupNum);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.groupNum.localeCompare(b.groupNum);
+    });
+
+    let html = '<table class="fac-table"><thead><tr><th>Group</th>';
+    COMPETENCIES.forEach(c => {
+      html += '<th class="comp-col">' + c + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    groups.forEach(g => {
+      html += '<tr><td class="group-cell">' + g.groupNum + '</td>';
+      COMPETENCIES.forEach((c, i) => {
+        const mark = g.marks[i];
+        let symbol = "";
+        let style = "";
+        if (mark === 1) { symbol = "&#9711;"; style = 'color: var(--circle);'; }
+        else if (mark === 2) { symbol = "&times;"; style = 'color: var(--cross);'; }
+        html += '<td><span class="fac-mark" style="' + style + '">' + symbol + '</span></td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  } catch (e) {
+    wrap.innerHTML = '<p class="fac-empty">Could not load groups. Try again.</p>';
+  }
+}
+
+document.getElementById("loadAllBtn").addEventListener("click", loadAllGroups);
+</script>
+</body>
+</html>
